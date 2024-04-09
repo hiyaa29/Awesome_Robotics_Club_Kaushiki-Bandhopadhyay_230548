@@ -1,0 +1,153 @@
+import math
+def cos_Calc(length,angle, x1):#used for calculating the x coordinate of initial positions of joints starting from the first joint
+    x=x1+(length*math.cos(angle))
+    return x
+def sin_Calc(length,angle,y1):#used for calculating the y coordinate of initial positions of joints starting from the first joint
+    y=y1+(length*math.sin(angle))
+    return y
+def Distance(x1,y1,z1,xt1,yt1,zt1):#used to find the distance between any two points
+    d=((xt1-x1)*(xt1-x1))+((yt1-y1)*(yt1-y1))+((zt1-z1)*(zt1-z1))
+    d1=math.sqrt(d)
+    return d1
+def Forward_Backward_Pass_x(x1,y1,z1,x2,y2,z2,l):#used for backward as well as forward phase of iteration of the x coordinate of the joint positions
+    d=(x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)+(z2-z1)*(z2-z1)#used to find the magnitude of the vector joining the new relocated point with its previous point that was not moved until then
+    d=math.sqrt(float(d))
+    x=x1+(l*((x2-x1)/d))
+    return x
+def Forward_Backward_Pass_y(x1,y1,z1,x2,y2,z2,l):#used for backward as well as forward phase of iteration of the y coordinate of the joint positions
+    d=(x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)+(z2-z1)*(z2-z1)
+    d=math.sqrt(float(d))
+    y=y1+(l*((y2-y1)/d))
+    return y
+def Forward_Backward_Pass_z(x1,y1,z1,x2,y2,z2,l):#used for backward as well as forward phase of iteration of the z coordination of the joint positions
+    d=(x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)+(z2-z1)*(z2-z1)
+    d=math.sqrt(float(d))
+    z=z1+(l*((z2-z1)/d))
+    return z
+def Joint_Angle_Calculation(vector):#used for calculating the joint angles for each limb connecting two joints after each iteration
+    norm=Distance(vector[0],vector[1],vector[2],0,0,0)
+    cos_beta=(vector[0]/norm)#finds the dot product of the limb vector and x axis
+    sin_beta=(vector[1]/norm)#finds the dot product of the limb vector and y axis
+    if((sin_beta>0 and cos_beta<0) or (sin_beta>0 and cos_beta>0)):#helps to find joint angle for angles in the range of 0 to 180 degrees
+        beta=math.acos(cos_beta)
+    elif(sin_beta<0 and cos_beta>0):#helps to find joint angle for angles in the range of 0 to -90 degrees
+        beta=math.asin(sin_beta)
+    else:
+        beta=math.acos(cos_beta)-math.pi#helps to find joint angle for angles in the range of -90 to -180 degrees
+    return beta
+        
+    
+l_initial=list()
+print("Let coordinate 1 be the x coordinate ")
+print("Let coordinate 2 be the y coordinate ")
+print("Let coordinate 3 be the z coordinate ")
+for i in range(0,3,1):
+    x=float(input("Enter coordinate "+str((i+1))+" for initial position : "))#accepts the coordinates of the position for the first joint
+    l_initial.append(x)
+link_lengths=[23,15,48]
+l_target=list()
+for i in range(0,3,1):
+    x=float(input("Enter coordinate "+str((i+1))+" for target position : "))#accepts the coordinates for the target position
+    l_target.append(x)
+d_total_square=0
+for i in range(0,3,1):
+    d_total_square+=(l_target[i]-l_initial[i])*(l_target[i]-l_initial[i]) # finds the distance between target and initial position of first joint'''
+                                                                                                                      
+d_total=math.sqrt(d_total_square)
+bot_arm_length=0
+for i in range(0,3):
+    bot_arm_length+=link_lengths[i]#finds the total length of the robotic arm
+flag=False
+if(d_total>bot_arm_length):#checks for reachability of the target point 
+    print("Target Unreachable\n")
+else:
+    print("Target Reachable\n")
+    flag=True
+if(flag):
+    l_joint=list()#angles can be entered in both degrees and radians as per the user's wish
+    print("Enter 1 in order to input angles in degrees  ")
+    print("Enter 2 in order to input angles in radians ")
+    option=0
+    while(option!=1 and option!=2):
+        option=int(input("Enter choice : "))
+        if(option!=1 and option!=2):
+         print("Invalid choice : ")
+    flag1=True
+    i=0
+    while(i<3):
+       flag1=True
+       theta=float(input("Enter joint angle within 0 to 180 degrees or 0 to pi radians or -180 to 0 degrees or -pi to 0 radians for joint "+str(i+1)+"  : "))#the robot's degree of  freedom is 180 degrees
+
+       if (option==1):                                                                                                                                                                                                                              
+               alpha=theta
+               theta=math.radians((theta))
+       if(option==2):
+           alpha=math.degrees(theta)
+       if(alpha>180 or alpha<-180):
+            print("Each joint has a degree of freedom of 180 degrees. Please enter a valid joint angle .")
+            flag1=False
+       if(flag1):
+            l_joint.append(theta)
+            i=i+1
+    l_points=list()
+    l_points.append([l_initial[0],l_initial[1],l_initial[2]])
+    for i in range(1,4):#calculates positions of different joints on the basis of link lengths and joint angles
+        x=cos_Calc(link_lengths[i-1],l_joint[i-1],l_points[i-1][0])
+        y=sin_Calc(link_lengths[i-1],l_joint[i-1],l_points[i-1][1])
+        l_points.append([x,y,l_points[i-1][2]])
+    d=Distance(l_points[3][0],l_points[3][1],l_points[3][2],l_target[0],l_target[1],l_target[2])#calculates the distance between end-effector and the target position
+    d1=Distance(l_points[0][0],l_points[0][1],l_points[0][2],l_initial[0],l_initial[1],l_initial[2])
+    max_iterations=400
+    i1=1
+    tolerance=0.01
+    while(d>tolerance):
+             if(i1>max_iterations):
+                  break
+             for i in range(0,3):
+                 l_points[3][i]=l_target[i]
+             for i in range(0,3):
+               x=Forward_Backward_Pass_x(l_points[3-i][0],l_points[3-i][1],l_points[3-i][2],l_points[3-i-1][0],l_points[3-i-1][1],l_points[3-i-1][2],link_lengths[3-i-1])#Backward pass occurs
+               y=Forward_Backward_Pass_y(l_points[3-i][0],l_points[3-i][1],l_points[3-i][2],l_points[3-i-1][0],l_points[3-i-1][1],l_points[3-i-1][2],link_lengths[3-i-1])   
+               z=Forward_Backward_Pass_z(l_points[3-i][0],l_points[3-i][1],l_points[3-i][2],l_points[3-i-1][0],l_points[3-i-1][1],l_points[3-i-1][2],link_lengths[3-i-1])     
+               l_points[3-i-1][0]=x
+               l_points[3-i-1][1]=y
+               l_points[3-i-1][2]=z
+             d1=Distance(l_points[0][0],l_points[0][1],l_points[0][2],l_initial[0],l_initial[1],l_initial[2])#distance between the the initial position of first joint and its current position is calculated
+             if(d1!=0):
+               for i in range(0,3):
+                l_points[0][i]=l_initial[i]
+               for i in range(1,4):
+                x=Forward_Backward_Pass_x(l_points[i-1][0], l_points[i-1][1],l_points[i-1][2], l_points[i][0], l_points[i][1], l_points[i][2],link_lengths[i-1])#Forward pass occurs
+                y=Forward_Backward_Pass_y(l_points[i-1][0], l_points[i-1][1],l_points[i-1][2], l_points[i][0], l_points[i][1],l_points[i][2], link_lengths[i-1])
+                z=Forward_Backward_Pass_z(l_points[i-1][0], l_points[i-1][1],l_points[i-1][2], l_points[i][0], l_points[i][1],l_points[i][2], link_lengths[i-1])
+                l_points[i][0]=x
+                l_points[i][1]=y
+                l_points[i][2]=z
+           
+             d=Distance(l_points[3][0],l_points[3][1],l_points[3][2],l_target[0],l_target[1],l_target[2])#distance between the end effector the target positions is being calculated
+             final_joint_angles=list()
+             final_joint_angles_degrees=list()
+             for i in range(0,3):
+                 vector=list()
+                 for j in range(0,3):
+                     x=l_points[i+1][j]-l_points[i][j]
+                     vector.append(x)
+                 beta=Joint_Angle_Calculation(vector)#joint angle for each joint is being calculated after each iteration
+                 final_joint_angles.append(beta)
+                 final_joint_angles_degrees.append(math.degrees(beta))
+             print("Joint angles for iteration ",(i1))
+             for i in range(0,3):
+                print("Angle of link joining joint "+str(i+1)+" and joint "+str(i+2)+"  in degrees : ",final_joint_angles_degrees[i])#joint angles are being printed in both radians and degrees 
+                print("Angle of link joining joint "+str(i+1)+" and joint "+str(i+2)+" in radians : ",final_joint_angles[i])
+             i1+=1
+    if(i1>max_iterations):
+        print("Failed to converge!")#prints failed to converge if the end effector is unable to reach the target position even after maximum number of iterations allowed
+    else:
+        print("Converged")#printed converged if the end effector reaches the target position within the interations allowed
+    
+        
+   
+
+
+
+
