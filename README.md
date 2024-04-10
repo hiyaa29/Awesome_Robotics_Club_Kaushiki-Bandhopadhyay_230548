@@ -4,8 +4,8 @@ If the sum of all link lengths( that is the total length of the arm is more than
 This is followed by calculation of positions of the other joints using joint angles and link lengths.
 After this, the position of the end effector( final joint) is set to be the same as target position and backward pass is carried out as per FABRIK algorithm, leading to movement of the entire arm.
 This might cause the first joint to move from its initial position.
-As the result, forward pass is carried out to make sure that the first joint does not move from its initial postion.
-This forward and backard passes, together, constitute an iteration.
+As the result, forward pass is carried out to make sure that  the first joint does not deviate from its initial coordinates. Here, the first joint position is again set to its initial coordinates and the entire arm, once again, gets displaced. In case, the end effector deviates too much from the target position, the forward pass is followed by a backward pass and the same process repeats.
+One forward pass and one backard pass, together, constitute an iteration.
 With each iteration, the end effector gets closer to the target and finally, converges.
 However, it may also happen that it fails to converge to the target even after maximum number of allowed iterations. In that case, the program shows that the arm fails to converge.
 Tolerance value is used to define the maximum permissible error between target location and end effector location at the time of convergence.
